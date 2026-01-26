@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
-import com.bylazar.telemetry.PanelsTelemetry; // Твой импорт
+import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -10,21 +10,26 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.SimpleTurret;
 
-@TeleOp(name = "Test: Chassis + Turret", group = "Test")
+@TeleOp(name = "Test: Simple Turret", group = "Test")
 public class TestTeleOp extends OpMode {
 
     private Follower follower;
     private SimpleTurret turret;
     private TelemetryManager telemetryM;
 
+    // Переменная для ручного изменения угла бамперами
+    private double manualTarget = 0;
+
     @Override
     public void init() {
+        // Инициализация Pedro Pathing
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(0,0,0));
+        follower.setStartingPose(new Pose(0, 0, 0));
 
+        // Инициализация турели
         turret = new SimpleTurret(hardwareMap);
 
-        // Твоя телеметрия
+        // Твоя телеметрия через панельки
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
     }
 
@@ -35,7 +40,7 @@ public class TestTeleOp extends OpMode {
 
     @Override
     public void loop() {
-        // 1. Шасси (Pedro)
+        // 1. Управление базой (Pedro)
         follower.setTeleOpDrive(
                 -gamepad1.left_stick_y,
                 -gamepad1.left_stick_x,
@@ -44,21 +49,29 @@ public class TestTeleOp extends OpMode {
         );
         follower.update();
 
-        // 2. Тест Турели (Кнопки)
-        if (gamepad1.a) turret.setTargetAngle(0);
-        if (gamepad1.b) turret.setTargetAngle(Math.toRadians(45));
-        if (gamepad1.x) turret.setTargetAngle(Math.toRadians(-45));
+        // 2. Логика выбора угла для турели
+        if (gamepad1.a) {
+            manualTarget = 0; // В центр
+        } else if (gamepad1.b) {
+            manualTarget = Math.toRadians(90); // Направо
+        } else if (gamepad1.x) {
+            manualTarget = Math.toRadians(-90); // Налево
+        }
 
-        // Ручной тюнинг (Триггеры для тонкой доводки)
-        if (gamepad1.right_bumper) turret.setTargetAngle(turret.getTargetAngle() + 0.01);
-        if (gamepad1.left_bumper)  turret.setTargetAngle(turret.getTargetAngle() - 0.01);
+        // Плавная доводка бамперами (удерживаешь — угол меняется)
+        if (gamepad1.right_bumper) manualTarget += 0.02;
+        if (gamepad1.left_bumper)  manualTarget -= 0.02;
 
+        // Отправляем команду в "абсолютную" функцию
+        turret.setTargetAngle(manualTarget);
+
+        // Обновляем моторы
         turret.update();
 
-        // 3. Вывод в Panels
-        telemetryM.debug("Turret/Target", Math.toDegrees(turret.getTargetAngle()));
-        telemetryM.debug("Turret/Current", Math.toDegrees(turret.getCurrentAngle()));
-        telemetryM.debug("Turret/Error", Math.toDegrees(turret.getError()));
+        // 3. Вывод данных для настройки PID в реальном времени
+        telemetryM.debug("Turret/Target Deg", Math.toDegrees(manualTarget));
+        telemetryM.debug("Turret/Current Deg", Math.toDegrees(turret.getCurrentAngle()));
+        telemetryM.debug("Turret/Power", "N/A"); // Если хочешь, можно добавить геттер мощности в класс
 
         telemetryM.update();
     }
