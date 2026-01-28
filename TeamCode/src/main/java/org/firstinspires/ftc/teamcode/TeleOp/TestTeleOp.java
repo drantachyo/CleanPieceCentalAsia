@@ -24,7 +24,7 @@ public class TestTeleOp extends OpMode {
     public void init() {
         // Инициализация Pedro Pathing
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(0, 0, 0));
+        follower.setStartingPose(new Pose(8, 8, 0));
 
         // Инициализация турели
         turret = new SimpleTurret(hardwareMap);
@@ -66,7 +66,7 @@ public class TestTeleOp extends OpMode {
         turret.setTargetAngle(manualTarget);
 
         // Обновляем моторы
-        turret.update();
+        turret.updateManual();
 
         // 3. Вывод данных для настройки PID в реальном времени
         telemetryM.debug("Turret/Target Deg", Math.toDegrees(manualTarget));
